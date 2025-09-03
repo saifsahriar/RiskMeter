@@ -67,7 +67,7 @@ The tool assigns risk scores from 0-100 based on evidence that a subdomain is ei
 **Setup:**
 ```bash
 # Clone or download the project
-git clone <repository-url>
+git clone https://github.com/saifsahriar/RiskMeter.git
 cd subdomain-recon
 
 # Install dependencies
@@ -86,7 +86,7 @@ chmod +x risk_meter.py
 **Setup:**
 ```bash
 # Clone or download the project
-git clone <repository-url>
+git clone https://github.com/saifsahriar/RiskMeter.git
 cd subdomain-recon
 
 # Make run script executable
@@ -150,21 +150,6 @@ docker run --rm \
   -f /app/input/subdomains.txt -o /app/output/results.json
 ```
 
-**Using Docker Compose:**
-```bash
-# Copy subdomains file
-cp subdomains.txt input/
-
-# Build and run
-docker-compose up --build
-
-# Run with custom parameters
-docker-compose run --rm recon-tool \
-  -f /app/input/subdomains.txt \
-  -o /app/output/results.json \
-  -t 30 --timeout 15
-```
-
 ## Command Line Options
 
 | Option | Description | Default |
@@ -190,49 +175,6 @@ jenkins.example.com
 ```
 
 Lines starting with `#` are treated as comments and ignored.
-
-## Output Format
-
-### Terminal Output
-
-Results are displayed with color coding:
-- **Red/Bold**: High risk (50+ points)
-- **Yellow/Bold**: Medium risk (30-49 points)
-- **Cyan**: Low-medium risk (15-29 points)
-- **Green**: Low risk (0-14 points)
-
-Each result shows:
-- Risk score and subdomain name
-- IP address and HTTP status code
-- Page title (if available)
-- Port number (if non-standard)
-- Detailed reasons for the assigned score
-
-### JSON Output
-
-When using the `-o` option, results are saved in JSON format containing:
-
-```json
-[
-  {
-    "subdomain": "admin.example.com",
-    "ip": "192.168.1.100",
-    "score": 65,
-    "status_code": 200,
-    "title": "Admin Dashboard - Jenkins",
-    "port": 8080,
-    "is_cdn": false,
-    "is_cms": false,
-    "reasons": [
-      "Environment/Dev keyword in subdomain (+20)",
-      "Management/DevOps tool detected (+30)",
-      "Development port 8080 (+10)",
-      "Not behind CDN (+5)"
-    ],
-    "headers": {...}
-  }
-]
-```
 
 ## Common Use Cases
 
