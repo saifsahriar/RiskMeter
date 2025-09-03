@@ -68,7 +68,7 @@ The tool assigns risk scores from 0-100 based on evidence that a subdomain is ei
 ```bash
 # Clone or download the project
 git clone https://github.com/saifsahriar/RiskMeter.git
-cd subdomain-recon
+cd RiskMeter
 
 # Install dependencies
 pip install -r requirements.txt
@@ -87,7 +87,7 @@ chmod +x risk_meter.py
 ```bash
 # Clone or download the project
 git clone https://github.com/saifsahriar/RiskMeter.git
-cd subdomain-recon
+cd RiskMeter
 
 # Make run script executable
 chmod +x run-docker.sh
