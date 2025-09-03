@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subdomain Risk Assessment Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #64ffda;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 2px dashed #64ffda;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #64ffda, #00bcd4);
+            color: #0f0f23;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .high-risk { color: #ff4757; }
+        .medium-risk { color: #ffa502; }
+        .low-risk { color: #2ed573; }
+        .total { color: #64ffda; }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            color: #64ffda;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .control-group input, .control-group select {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #64ffda;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #ff4757, #ff6b7a);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(100, 255, 218, 0.2);
+        }
+
+        .result-item.high { border-left-color: #ff4757; }
+        .result-item.medium { border-left-color: #ffa502; }
+        .result-item.low { border-left-color: #2ed573; }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .subdomain {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #64ffda;
+            flex-grow: 1;
+        }
+
+        .score-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .score-badge.high { background: linear-gradient(45deg, #ff4757, #ff6b7a); }
+        .score-badge.medium { background: linear-gradient(45deg, #ffa502, #ffb84d); }
+        .score-badge.low { background: linear-gradient(45deg, #2ed573, #7bed9f); }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            color: #64ffda;
+            font-weight: bold;
+        }
+
+        .reasons {
+            margin-top: 15px;
+        }
+
+        .reasons h4 {
+            color: #64ffda;
+            margin-bottom: 10px;
+        }
+
+        .reason-tag {
+            display: inline-block;
+            background: rgba(100, 255, 218, 0.2);
+            color: #64ffda;
+            padding: 5px 10px;
+            margin: 3px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            border: 1px solid rgba(100, 255, 218, 0.3);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(100, 255, 218, 0.2);
+            border-color: #64ffda;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .active {
+            background: #64ffda;
+            color: #0f0f23;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64ffda;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(100, 255, 218, 0.3);
+            border-top: 4px solid #64ffda;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .result-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Subdomain Risk Assessment Dashboard</h1>
+            <p>Interactive visualization for subdomain security analysis</p>
+        </div>
+
+        <div class="upload-section">
+            <input type="file" id="jsonFile" class="file-input" accept=".json" />
+            <label for="jsonFile" class="file-label">
+                Upload Results JSON File
+            </label>
+            <p style="margin-top: 15px; color: #888;">Select your results.json file to visualize the risk assessment</p>
+        </div>
+
+        <div id="statsSection" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number total" id="totalCount">0</div>
+                    <div>Total Subdomains</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number high-risk" id="highRiskCount">0</div>
+                    <div>High Risk (50+)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number medium-risk" id="mediumRiskCount">0</div>
+                    <div>Medium Risk (30-49)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number low-risk" id="lowRiskCount">0</div>
+                    <div>Low Risk (<30)</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="searchInput">Search Subdomains</label>
+                    <input type="text" id="searchInput" placeholder="Filter by subdomain name...">
+                </div>
+                <div class="control-group">
+                    <label for="riskFilter">Risk Level</label>
+                    <select id="riskFilter">
+                        <option value="all">All Risk Levels</option>
+                        <option value="high">High Risk (50+)</option>
+                        <option value="medium">Medium Risk (30-49)</option>
+                        <option value="low">Low Risk (<30)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="minScore">Minimum Score</label>
+                    <input type="number" id="minScore" min="0" max="100" value="0">
+                </div>
+                <div class="control-group">
+                    <label for="sortBy">Sort By</label>
+                    <select id="sortBy">
+                        <option value="score">Score (Highest First)</option>
+                        <option value="score-asc">Score (Lowest First)</option>
+                        <option value="name">Subdomain Name</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="itemsPerPage">Items Per Page</label>
+                    <select id="itemsPerPage">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">Show All</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="results-header">
+                <h2 id="resultsTitle">Risk Assessment Results</h2>
+                <div>
+                    <button class="export-btn" onclick="exportFilteredResults()">Export Filtered Results</button>
+                    <button class="export-btn" onclick="exportHighRisk()" style="margin-left: 10px;">Export High Risk Only</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="results-container">
+            <div class="no-results">
+                <h3>No results loaded</h3>
+                <p>Upload a JSON file to start analyzing your subdomain risk assessment results</p>
+            </div>
+        </div>
+
+        <div id="pagination" class="pagination" style="display: none;"></div>
+    </div>
+
+    <script>
+        let allResults = [];
+        let filteredResults = [];
+        let currentPage = 1;
+        let itemsPerPage = 20;
+
+        // File upload handler
+        document.getElementById('jsonFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        allResults = JSON.parse(e.target.result);
+                        loadResults();
+                    } catch (error) {
+                        alert('Error parsing JSON file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Control event listeners
+        document.getElementById('searchInput').addEventListener('input', filterResults);
+        document.getElementById('riskFilter').addEventListener('change', filterResults);
+        document.getElementById('minScore').addEventListener('input', filterResults);
+        document.getElementById('sortBy').addEventListener('change', filterResults);
+        document.getElementById('itemsPerPage').addEventListener('change', function() {
+            itemsPerPage = this.value === 'all' ? filteredResults.length : parseInt(this.value);
+            currentPage = 1;
+            displayResults();
+        });
+
+        function loadResults() {
+            if (!allResults || allResults.length === 0) {
+                document.getElementById('resultsContainer').innerHTML = 
+                    '<div class="no-results"><h3>No results found</h3><p>The JSON file appears to be empty or invalid</p></div>';
+                return;
+            }
+
+            document.getElementById('statsSection').style.display = 'block';
+            updateStats();
+            filterResults();
+        }
+
+        function updateStats() {
+            const total = allResults.length;
+            const high = allResults.filter(r => r.score >= 50).length;
+            const medium = allResults.filter(r => r.score >= 30 && r.score < 50).length;
+            const low = allResults.filter(r => r.score < 30).length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('highRiskCount').textContent = high;
+            document.getElementById('mediumRiskCount').textContent = medium;
+            document.getElementById('lowRiskCount').textContent = low;
+        }
+
+        function filterResults() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const riskFilter = document.getElementById('riskFilter').value;
+            const minScore = parseInt(document.getElementById('minScore').value) || 0;
+            const sortBy = document.getElementById('sortBy').value;
+
+            filteredResults = allResults.filter(result => {
+                const matchesSearch = result.subdomain.toLowerCase().includes(searchTerm);
+                const matchesRisk = riskFilter === 'all' || 
+                    (riskFilter === 'high' && result.score >= 50) ||
+                    (riskFilter === 'medium' && result.score >= 30 && result.score < 50) ||
+                    (riskFilter === 'low' && result.score < 30);
+                const matchesScore = result.score >= minScore;
+
+                return matchesSearch && matchesRisk && matchesScore;
+            });
+
+            // Sort results
+            filteredResults.sort((a, b) => {
+                switch (sortBy) {
+                    case 'score':
+                        return b.score - a.score;
+                    case 'score-asc':
+                        return a.score - b.score;
+                    case 'name':
+                        return a.subdomain.localeCompare(b.subdomain);
+                    default:
+                        return b.score - a.score;
+                }
+            });
+
+            currentPage = 1;
+            if (itemsPerPage === 'all') {
+                itemsPerPage = filteredResults.length;
+            }
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('resultsContainer');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredResults.length);
+            const pageResults = filteredResults.slice(startIndex, endIndex);
+
+            if (pageResults.length === 0) {
+                container.innerHTML = '<div class="no-results"><h3>No results match your filters</h3><p>Try adjusting your search criteria</p></div>';
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            pageResults.forEach(result => {
+                const riskClass = result.score >= 50 ? 'high' : result.score >= 30 ? 'medium' : 'low';
+                
+                html += `
+                    <div class="result-item ${riskClass}">
+                        <div class="result-header">
+                            <div class="subdomain">${result.subdomain}</div>
+                            <div class="score-badge ${riskClass}">${result.score}</div>
+                        </div>
+                        <div class="result-details">
+                            <div class="detail-item">
+                                <span class="detail-label">IP:</span> ${result.ip || 'N/A'}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Status:</span> ${result.status_code || 'N/A'}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Port:</span> ${result.port || '80'}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">CDN:</span> ${result.is_cdn ? 'Yes' : 'No'}
+                            </div>
+                        </div>
+                        ${result.title ? `<div class="detail-item" style="margin-bottom: 10px;"><span class="detail-label">Title:</span> ${result.title}</div>` : ''}
+                        ${result.reasons && result.reasons.length > 0 ? `
+                            <div class="reasons">
+                                <h4>Risk Factors:</h4>
+                                ${result.reasons.map(reason => `<span class="reason-tag">${reason}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updatePagination();
+            document.getElementById('resultsTitle').textContent = 
+                `Risk Assessment Results (${filteredResults.length} total, showing ${startIndex + 1}-${endIndex})`;
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+            const paginationContainer = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+
+            paginationContainer.style.display = 'flex';
+            let html = '';
+
+            // Previous button
+            html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`;
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                html += `<button onclick="changePage(1)">1</button>`;
+                if (startPage > 2) html += `<span>...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button onclick="changePage(${i})" ${i === currentPage ? 'class="active"' : ''}>${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span>...</span>`;
+                html += `<button onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Next button
+            html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+
+            paginationContainer.innerHTML = html;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayResults();
+            }
+        }
+
+        function exportFilteredResults() {
+            if (filteredResults.length === 0) {
+                alert('No results to export');
+                return;
+            }
+
+            const dataStr = JSON.stringify(filteredResults, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `filtered_results_${new Date().getTime()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportHighRisk() {
+            const highRiskResults = allResults.filter(r => r.score >= 50);
+            if (highRiskResults.length === 0) {
+                alert('No high risk results to export');
+                return;
+            }
+
+            const dataStr = JSON.stringify(highRiskResults, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `high_risk_results_${new Date().getTime()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
