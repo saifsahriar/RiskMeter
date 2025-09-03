@@ -296,16 +296,6 @@ python3 risk_meter.py -f subdomains.txt -o results.json
    - Sort by different criteria
    - Export filtered results
 
-The dashboard provides:
-- Visual risk level indicators with color coding
-- Summary statistics (total, high/medium/low risk counts)
-- Advanced filtering and search capabilities
-- Pagination for large datasets
-- Export functionality for filtered results
-- Detailed view of risk factors for each subdomain
-
-This visualization approach is particularly useful when dealing with hundreds or thousands of subdomains, allowing you to quickly identify and prioritize the highest-risk targets for manual security testing.
-
 ## License
 
 This tool is provided for educational and authorized security testing purposes only. Users are responsible for complying with applicable laws and obtaining proper authorization before scanning any systems they do not own.
