@@ -285,7 +285,7 @@ For better analysis of large result sets, use the included web-based dashboard:
 python3 risk_meter.py -f subdomains.txt -o results.json
 ```
 
-2. **Open dashboard:** Open `dashboard.html` in any web browser
+2. **Open dashboard:** Open `visualizer.html` in any web browser
 
 3. **Upload results:** Click "Upload Results JSON File" and select your `results.json`
 
